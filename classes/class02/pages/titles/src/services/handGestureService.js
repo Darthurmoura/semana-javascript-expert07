@@ -1,72 +1,69 @@
-import { knownGestures, gestureStrings } from "../util/gestures.js"
-
+import { knownGestures, gestureStrings } from "../util/gestures.js";
 
 export default class HandGestureService {
-  #gestureEstimator
-  #handPoseDetection
-  #handsVersion
-  #detector = null
-
-  constructor({ fingerpose, handPoseDetection, handsVersion }) {
-    this.#gestureEstimator = new fingerpose.GestureEstimator(knownGestures)
-    this.#handPoseDetection = handPoseDetection
-    this.#handsVersion = handsVersion
+  #gestureEstimator;
+  #handPoseDetection;
+  #handsVersion;
+  #detector = null;
+  constructor ({ fingerpose, handPoseDetection, handsVersion }) {
+    this.#gestureEstimator = new fingerpose.GestureEstimator(knownGestures);
+    this.#handPoseDetection = handPoseDetection;
+    this.#handsVersion = handsVersion;
   }
 
   async estimate(keypoints3D) {
     const predictions = await this.#gestureEstimator.estimate(
       this.#getLandMarksFromKeypoints(keypoints3D),
-      // porcentagem de confiança do gesto (90%)
-      9
-    )
-    return predictions.gestures
+      9, // gesture reliability percentage
+    );
+    return predictions.gestures;
   }
 
   async * detectGestures(predictions) {
-
     for (const hand of predictions) {
-      if (!hand.keypoints3D) continue
+      if (!hand.keypoints3D) continue;
 
-      const gestures = await this.estimate(hand.keypoints3D)
-      if (!gestures.length) continue
+      const gestures = await this.estimate(hand.keypoints3D);
 
-      const result = gestures.reduce(
-        (previous, current) => (previous.score > current.score) ? previous : current
-      )
-      const { x, y } = hand.keypoints.find(keypoint => keypoint.name === 'index_finger_tip')
+      if (!gestures.length) continue;
+
+      const result = gestures.reduce((previous, current) => (previous.score > current.score) ? previous : current);
+
+      const { x, y } = hand.keypoints.find(kp => kp.name === 'index_finger_tip');
+
       yield { event: result.name, x, y }
 
-      console.log('detected', gestureStrings[result.name])
+      console.log('detected', gestureStrings[result.name]);
     }
   }
 
   #getLandMarksFromKeypoints(keypoints3D) {
-    return keypoints3D.map(keypoint =>
+    return keypoints3D.map(keypoint => 
       [keypoint.x, keypoint.y, keypoint.z]
     )
   }
 
   async estimateHands(video) {
     return this.#detector.estimateHands(video, {
-      flipHorizontal: true
-    })
+      flipHorizontal: true,
+    });
   }
 
   async initializeDetector() {
-    if (this.#detector) return this.#detector
+    if (this.#detector) return this.detector;
 
     const detectorConfig = {
       runtime: 'mediapipe', // or 'tfjs',
       solutionPath: `https://cdn.jsdelivr.net/npm/@mediapipe/hands@${this.#handsVersion}`,
-      // full é o mais pesado e o mais preciso
-      modelType: 'lite',
+      modelType: 'lite', // or full, but lite is enough
       maxHands: 2,
     }
+
     this.#detector = await this.#handPoseDetection.createDetector(
       this.#handPoseDetection.SupportedModels.MediaPipeHands,
-      detectorConfig
-    )
+      detectorConfig,
+    );
 
-    return this.#detector
+    return this.#detector;
   }
 }
