@@ -14,12 +14,12 @@ export default class View {
     this.#canvasContext.drawImage(video, 0, 0, width, height)
     return this.#canvasContext.getImageData(0, 0, width, height)
   }
-  togglePlayVideo() {
-    if (this.#videoElement.paused) {
+  togglePlayVideo(side) {
+    if (this.#videoElement.paused && side === 'right') {
       this.#videoElement.play()
       return
     }
-    this.#videoElement.pause()
+    side ==='left' && this.#videoElement.pause()
   }
   enableButton() {
     this.#btnInit.disabled = false

@@ -51,11 +51,14 @@ export default class Service {
       const leftEAR = this.#getEAR(upperLeft, lowerLeft)
 
       // True if the eye is closed
-      const blinked = leftEAR <= EAR_THRESHOLD && rightEAR <= EAR_THRESHOLD
-      if (!blinked) continue
+      const blinkedLeftEye = leftEAR <= EAR_THRESHOLD
+      const blinkedRightEye = rightEAR <= EAR_THRESHOLD
+      if (!blinkedLeftEye && !blinkedRightEye) continue
       if(!shouldRun()) continue
 
-      return blinked
+      console.log('piscou no service', blinkedLeftEye, blinkedRightEye)
+
+      return { blinkedLeftEye, blinkedRightEye }
     }
     return false
   }
